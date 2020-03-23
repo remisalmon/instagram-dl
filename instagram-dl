@@ -1,25 +1,5 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2020 Remi Salmon
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 import re
 import os
 import sys
@@ -65,15 +45,15 @@ def main():
 
     url_id = args.url.split('/')[-1] if args.url.split('/')[-1] else args.url.split('/')[-2]
 
-    response = dl(args.url)
+    url_response = dl(args.url)
 
-    html_lines = response.read().decode().splitlines()
+    html_lines = url_response.read().decode().splitlines()
 
     json_data = None
 
-    for line in html_lines:
-        if '_sharedData = ' in line:
-            json_data = json.loads(line.split('_sharedData = ')[1][:-10])
+    for html_line in html_lines:
+        if '_sharedData = ' in html_line:
+            json_data = json.loads(html_line.split('_sharedData = ')[1][:-10])
 
     if not json_data:
         print('Error no data found')
@@ -89,29 +69,31 @@ def main():
 
     json_data = json_data['entry_data']['PostPage'][0]['graphql']['shortcode_media']
 
-    content = []
+    json_content = []
 
     if 'edge_sidecar_to_children' in json_data:
         for i, d in enumerate(json_data['edge_sidecar_to_children']['edges']):
-            content.append(d['node'])
+            json_content.append(d['node'])
 
     else:
-        content.append(json_data)
+        json_content.append(json_data)
 
-    print('Found {} files'.format(len(content)))
+    print('Found {} files'.format(len(json_content)))
 
-    for i, c in enumerate(content):
-        url = c['video_url'] if c['is_video'] else c['display_url']
-        ext = 'mp4' if c['is_video'] else 'jpg'
+    file_dir = os.getcwd()
 
-        response = dl(url)
+    for i, c in enumerate(json_content):
+        file_url = c['video_url'] if c['is_video'] else c['display_url']
+        file_ext = 'mp4' if c['is_video'] else 'jpg'
 
-        file = '{}{}.{}'.format(url_id, str(-(i+1)) if len(content) > 1 else '', ext)
+        url_response = dl(file_url)
 
-        with open(file, 'wb') as f:
-            f.write(response.read())
+        file_name = '{}/{}{}.{}'.format(file_dir, url_id, str(-(i+1)) if len(json_content) > 1 else '', file_ext)
 
-        print('Saved {}'.format(file))
+        with open(file_name, 'wb') as f:
+            f.write(url_response.read())
+
+        print('Saved {}'.format(file_name))
 
     print('Done')
 
