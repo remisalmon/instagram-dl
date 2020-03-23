@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2020 Remi Salmon
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+import re
+import os
+import sys
+import json
+import argparse
+import urllib.error
+import urllib.request
+
+def dl(url):
+    req = urllib.request.Request(url, headers = {'User-Agent':'Mozilla/5.0'})
+
+    try:
+        response = urllib.request.urlopen(req)
+
+    except urllib.error.URLError as e:
+        if hasattr(e, 'reason'):
+            print('Error downloading data ({})'.format(e.reason))
+
+        elif hasattr(e, 'code'):
+            print('Error downloading data ({})'.format(e.code))
+
+        quit()
+
+    return(response)
+
+def main():
+    parser = argparse.ArgumentParser(description = 'Download images and/or videos from an Instagram post')
+
+    parser.add_argument('url', type = str, help = 'instagram post url')
+    parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence stdout')
+    parser.add_argument('-d', '--debug', action = 'store_true', help = 'save json data for debug')
+
+    args = parser.parse_args()
+
+    if args.quiet:
+        sys.stdout = open(os.devnull, 'w')
+
+    if not re.match('(https://)?(www.)?instagram.com/p/\S+/?', args.url):
+        print('Error {} not an instagram url'.format(args.url))
+        quit()
+
+    print('Downloading {}'.format(args.url))
+
+    url_id = args.url.split('/')[-1] if args.url.split('/')[-1] else args.url.split('/')[-2]
+
+    response = dl(args.url)
+
+    html_lines = response.read().decode().splitlines()
+
+    json_data = None
+
+    for line in html_lines:
+        if '_sharedData = ' in line:
+            json_data = json.loads(line.split('_sharedData = ')[1][:-10])
+
+    if not json_data:
+        print('Error no data found')
+        quit()
+
+    if args.debug:
+        file = '{}.json'.format(url_id)
+
+        with open(file, 'w') as f:
+            json.dump(json_data, f)
+
+        print('saved {}'.format(file))
+
+    json_data = json_data['entry_data']['PostPage'][0]['graphql']['shortcode_media']
+
+    content = []
+
+    if 'edge_sidecar_to_children' in json_data:
+        for i, d in enumerate(json_data['edge_sidecar_to_children']['edges']):
+            content.append(d['node'])
+
+    else:
+        content.append(json_data)
+
+    print('Found {} files'.format(len(content)))
+
+    for i, c in enumerate(content):
+        url = c['video_url'] if c['is_video'] else c['display_url']
+        ext = 'mp4' if c['is_video'] else 'jpg'
+
+        response = dl(url)
+
+        file = '{}{}.{}'.format(url_id, str(-(i+1)) if len(content) > 1 else '', ext)
+
+        with open(file, 'wb') as f:
+            f.write(response.read())
+
+        print('Saved {}'.format(file))
+
+    print('Done')
+
+if __name__ == '__main__':
+    main()
