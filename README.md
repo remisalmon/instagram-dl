@@ -1,23 +1,25 @@
 # instagram-dl
-Download images/videos from Instagram posts in pure Python, no external libraries/setup required
+Download full resolution images & videos from Instagram posts
 
 Supports images, videos and multi-images/videos posts
 
+Written pure Python, no external libraries/setup required
+
 ## Installation
-Download `instagram-dl` and add to path 
+Download `instagram-dl`, make executable and add to path 
 
 ## Usage
 ```
 usage: instagram-dl [-h] [-q] [-d] url
 
-Download images and/or videos from an Instagram post
+Download images & videos from an Instagram post
 
 positional arguments:
   url          instagram post url
 
 optional arguments:
   -h, --help   show this help message and exit
-  -q, --quiet  silence stdout
+  -q, --quiet  silence output
   -d, --debug  save json data for debug
 ```
 
