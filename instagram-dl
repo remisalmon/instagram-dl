@@ -75,8 +75,10 @@ def main():
     if not json_data:
         sys.exit('Error no data found')
 
+    file_dir = os.getcwd()
+
     if args.debug:
-        file = '{}.json'.format(url_id)
+        file = '{}/{}.json'.format(file_dir, url_id)
 
         with open(file, 'w') as f:
             json.dump(json_data, f)
@@ -95,8 +97,6 @@ def main():
         json_content.append(json_data)
 
     print('Found {} files'.format(len(json_content)))
-
-    file_dir = os.getcwd()
 
     for i, c in enumerate(json_content):
         file_url = c['video_url'] if c['is_video'] else c['display_url']
