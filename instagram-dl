@@ -44,10 +44,10 @@ def dl(url):
     return response
 
 def main():
-    parser = argparse.ArgumentParser(description = 'Download images and/or videos from an Instagram post')
+    parser = argparse.ArgumentParser(description = 'Download images & videos from an Instagram post')
 
     parser.add_argument('url', type = str, help = 'instagram post url')
-    parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence stdout')
+    parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence output')
     parser.add_argument('-d', '--debug', action = 'store_true', help = 'save json data for debug')
 
     args = parser.parse_args()
@@ -81,15 +81,15 @@ def main():
         with open(file, 'w') as f:
             json.dump(json_data, f)
 
-        print('saved {}'.format(file))
+        print('Saved {}'.format(file))
 
     json_data = json_data['entry_data']['PostPage'][0]['graphql']['shortcode_media']
 
     json_content = []
 
     if 'edge_sidecar_to_children' in json_data:
-        for i, d in enumerate(json_data['edge_sidecar_to_children']['edges']):
-            json_content.append(d['node'])
+        for e in json_data['edge_sidecar_to_children']['edges']:
+            json_content.append(e['node'])
 
     else:
         json_content.append(json_data)
