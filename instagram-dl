@@ -36,14 +36,12 @@ def dl(url):
 
     except urllib.error.URLError as e:
         if hasattr(e, 'reason'):
-            print('Error downloading data ({})'.format(e.reason))
+            sys.exit('Error downloading data ({})'.format(e.reason))
 
         elif hasattr(e, 'code'):
-            print('Error downloading data ({})'.format(e.code))
+            sys.exit('Error downloading data ({})'.format(e.code))
 
-        quit()
-
-    return(response)
+    return response
 
 def main():
     parser = argparse.ArgumentParser(description = 'Download images and/or videos from an Instagram post')
@@ -55,11 +53,10 @@ def main():
     args = parser.parse_args()
 
     if args.quiet:
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = sys.stderr = open(os.devnull, 'w')
 
     if not re.match('(https://)?(www.)?instagram.com/p/\S+/?', args.url):
-        print('Error {} not an instagram url'.format(args.url))
-        quit()
+        sys.exit('Error {} not an instagram url'.format(args.url))
 
     print('Downloading {}'.format(args.url))
 
@@ -76,8 +73,7 @@ def main():
             json_data = json.loads(html_line.split('_sharedData = ')[1][:-10])
 
     if not json_data:
-        print('Error no data found')
-        quit()
+        sys.exit('Error no data found')
 
     if args.debug:
         file = '{}.json'.format(url_id)
@@ -105,10 +101,11 @@ def main():
     for i, c in enumerate(json_content):
         file_url = c['video_url'] if c['is_video'] else c['display_url']
         file_ext = 'mp4' if c['is_video'] else 'jpg'
+        file_num = str(-(i+1)) if len(json_content) > 1 else ''
+
+        file_name = '{}/{}{}.{}'.format(file_dir, url_id, file_num, file_ext)
 
         url_response = dl(file_url)
-
-        file_name = '{}/{}{}.{}'.format(file_dir, url_id, str(-(i+1)) if len(json_content) > 1 else '', file_ext)
 
         with open(file_name, 'wb') as f:
             f.write(url_response.read())
