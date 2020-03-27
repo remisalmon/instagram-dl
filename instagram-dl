@@ -49,14 +49,17 @@ def main():
     parser.add_argument('url', type = str, help = 'instagram post url')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence output')
     parser.add_argument('-d', '--debug', action = 'store_true', help = 'save json data for debug')
+    parser.add_argument('-p', '--path', type = str, metavar = 'PATH', help = 'specify download path (default: current dir)')
 
     args = parser.parse_args()
+
+    if not re.match('(https://)?(www.)?instagram.com/p/\S+/?', args.url):
+        sys.exit('Error {} not an instagram url'.format(args.url))
 
     if args.quiet:
         sys.stdout = sys.stderr = open(os.devnull, 'w')
 
-    if not re.match('(https://)?(www.)?instagram.com/p/\S+/?', args.url):
-        sys.exit('Error {} not an instagram url'.format(args.url))
+    file_path = args.path if args.path else os.getcwd()
 
     print('Downloading {}'.format(args.url))
 
@@ -75,15 +78,13 @@ def main():
     if not json_data:
         sys.exit('Error no data found')
 
-    file_dir = os.getcwd()
-
     if args.debug:
-        file = '{}/{}.json'.format(file_dir, url_id)
+        file_name = '{}/{}.json'.format(file_path, url_id)
 
-        with open(file, 'w') as f:
+        with open(file_name, 'w') as f:
             json.dump(json_data, f)
 
-        print('Saved {}'.format(file))
+        print('Saved {}'.format(file_name))
 
     json_data = json_data['entry_data']['PostPage'][0]['graphql']['shortcode_media']
 
@@ -96,14 +97,12 @@ def main():
     else:
         json_content.append(json_data)
 
-    print('Found {} files'.format(len(json_content)))
-
     for i, c in enumerate(json_content):
         file_url = c['video_url'] if c['is_video'] else c['display_url']
         file_ext = 'mp4' if c['is_video'] else 'jpg'
         file_num = str(-(i+1)) if len(json_content) > 1 else ''
 
-        file_name = '{}/{}{}.{}'.format(file_dir, url_id, file_num, file_ext)
+        file_name = '{}/{}{}.{}'.format(file_path, url_id, file_num, file_ext)
 
         url_response = dl(file_url)
 
@@ -111,8 +110,6 @@ def main():
             f.write(url_response.read())
 
         print('Saved {}'.format(file_name))
-
-    print('Done')
 
 if __name__ == '__main__':
     main()
