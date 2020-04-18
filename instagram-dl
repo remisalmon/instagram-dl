@@ -46,10 +46,10 @@ def dl(url):
 def main():
     parser = argparse.ArgumentParser(description = 'Download images & videos from an Instagram post')
 
-    parser.add_argument('url', type = str, help = 'instagram post url')
+    parser.add_argument('url', help = 'instagram post url')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence output')
     parser.add_argument('-d', '--debug', action = 'store_true', help = 'save json data for debug')
-    parser.add_argument('-p', '--path', type = str, metavar = 'PATH', help = 'specify download path (default: current dir)')
+    parser.add_argument('-p', '--path', metavar = 'PATH', help = 'specify download path (default: current dir)')
 
     args = parser.parse_args()
 
@@ -59,9 +59,12 @@ def main():
     if args.quiet:
         sys.stdout = sys.stderr = open(os.devnull, 'w')
 
-    file_path = args.path if args.path else os.getcwd()
+    if args.path and not os.path.exists(args.path):
+        os.makedirs(args.path)
 
     print('Downloading {}'.format(args.url))
+
+    file_path = os.path.abspath(args.path) if args.path else os.getcwd()
 
     url_id = args.url.split('/')[-1] if args.url.split('/')[-1] else args.url.split('/')[-2]
 
@@ -69,13 +72,11 @@ def main():
 
     html_lines = url_response.read().decode().splitlines()
 
-    json_data = None
-
     for html_line in html_lines:
         if '_sharedData = ' in html_line:
             json_data = json.loads(html_line.split('_sharedData = ')[1][:-10])
 
-    if not json_data:
+    if not 'json_data' in locals():
         sys.exit('Error no data found')
 
     if args.debug:
