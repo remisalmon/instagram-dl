@@ -35,11 +35,10 @@ def dl(url):
         response = urllib.request.urlopen(req)
 
     except urllib.error.URLError as e:
-        if hasattr(e, 'reason'):
-            sys.exit('Error downloading data ({})'.format(e.reason))
+        exit('Error downloading data ({})'.format(e.reason if hasattr(e, 'reason') else e.code))
 
-        elif hasattr(e, 'code'):
-            sys.exit('Error downloading data ({})'.format(e.code))
+    except:
+        exit('Error downloading data')
 
     return response
 
@@ -54,7 +53,7 @@ def main():
     args = parser.parse_args()
 
     if not re.match('(https://)?(www.)?instagram.com/p/\S+/?', args.url):
-        sys.exit('Error {} not an instagram url'.format(args.url))
+        exit('Error {} not an instagram url'.format(args.url))
 
     if args.quiet:
         sys.stdout = sys.stderr = open(os.devnull, 'w')
@@ -66,7 +65,7 @@ def main():
 
     file_path = os.path.abspath(args.path) if args.path else os.getcwd()
 
-    url_id = args.url.split('/')[-1] if args.url.split('/')[-1] else args.url.split('/')[-2]
+    url_id = args.url.rstrip('/').split('/')[-1]
 
     url_response = dl(args.url)
 
@@ -77,7 +76,7 @@ def main():
             json_data = json.loads(html_line.split('_sharedData = ')[1][:-10])
 
     if not 'json_data' in locals():
-        sys.exit('Error no data found')
+        exit('Error no data found')
 
     if args.debug:
         file_name = '{}/{}.json'.format(file_path, url_id)
