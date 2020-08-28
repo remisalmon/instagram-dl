@@ -35,15 +35,14 @@ def dl(url):
         response = urllib.request.urlopen(req)
 
     except urllib.error.URLError as e:
-        exit('Error downloading data ({})'.format(e.reason if hasattr(e, 'reason') else e.code))
+        e = e.reason if hasattr(e, 'reason') else e.code if hasattr(e, 'code') else ''
 
-    except:
-        exit('Error downloading data')
+        exit('Error downloading data ({})'.format(e))
 
     return response
 
 def main():
-    parser = argparse.ArgumentParser(description = 'Download images & videos from an Instagram post')
+    parser = argparse.ArgumentParser(description = 'Download images and videos from an Instagram post')
 
     parser.add_argument('url', help = 'instagram post url')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence output')
@@ -76,7 +75,7 @@ def main():
             json_data = json.loads(html_line.split('_sharedData = ')[1][:-10])
 
     if not 'json_data' in locals():
-        exit('Error no data found')
+        exit('Error no image or video found')
 
     if args.debug:
         file_name = '{}/{}.json'.format(file_path, url_id)
