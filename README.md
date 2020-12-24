@@ -20,4 +20,4 @@ optional arguments:
 ```
 
 ## Requirements
-`python >= 3.7.6`
+`python >= 3.9`

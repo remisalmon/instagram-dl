@@ -24,24 +24,29 @@ import re
 import os
 import sys
 import json
-import argparse
-import urllib.error
-import urllib.request
 
-def dl(url):
-    req = urllib.request.Request(url, headers = {'User-Agent':'Mozilla/5.0'})
+from argparse import ArgumentParser
+from urllib.request import Request, urlopen
+from urllib.error import URLError
+
+def dl(url: str) -> bytes:
+    """Returns bytes object from url"""
+
+    req = Request(url, headers = {'User-Agent':'Mozilla/5.0'})
 
     try:
-        response = urllib.request.urlopen(req)
-    except urllib.error.URLError as e:
+        with urlopen(req) as response:
+            data = response.read()
+
+    except URLError as e:
         e = e.reason if hasattr(e, 'reason') else e.code if hasattr(e, 'code') else ''
 
         exit('Error downloading data ({})'.format(e))
 
-    return response
+    return data
 
-def main():
-    parser = argparse.ArgumentParser(description = 'Download images and videos from an Instagram post')
+def main() -> None:
+    parser = ArgumentParser(description = 'Download images and videos from an Instagram post')
 
     parser.add_argument('url', help = 'instagram post url')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence output')
@@ -50,7 +55,7 @@ def main():
 
     args = parser.parse_args()
 
-    if not re.fullmatch('(https://)?(www.)?instagram.com/p/\w+/?', args.url, flags = re.A):
+    if not re.fullmatch('http(s)?://www.instagram.com/p/\w+/?', args.url, flags = re.A):
         exit('Error {} not an Instagram post url'.format(args.url))
 
     if args.quiet:
@@ -65,15 +70,15 @@ def main():
 
     url_id = args.url.rstrip('/').split('/')[-1]
 
-    url_response = dl(args.url)
+    data = dl(args.url)
 
-    html_lines = url_response.read().decode().splitlines()
+    html_lines = data.decode().splitlines()
 
     for html_line in html_lines:
         if '_sharedData = ' in html_line:
             json_data = json.loads(html_line.split('_sharedData = ')[1][:-10])
 
-    if not 'json_data' in locals():
+    if 'json_data' not in locals():
         exit('Error no image or video found')
 
     if args.debug:
@@ -102,12 +107,14 @@ def main():
 
         file_name = '{}/{}{}.{}'.format(file_path, url_id, file_num, file_ext)
 
-        url_response = dl(file_url)
+        data = dl(file_url)
 
         with open(file_name, 'wb') as f:
-            f.write(url_response.read())
+            f.write(data)
 
         print('Saved {}'.format(file_name))
+
+    return
 
 if __name__ == '__main__':
     main()
