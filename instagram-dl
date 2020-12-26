@@ -41,7 +41,7 @@ def dl(url: str) -> bytes:
     except URLError as e:
         e = e.reason if hasattr(e, 'reason') else e.code if hasattr(e, 'code') else ''
 
-        exit('Error downloading data ({})'.format(e))
+        exit('ERROR: failed to download data ({})'.format(e))
 
     return data
 
@@ -51,24 +51,26 @@ def main() -> None:
     parser.add_argument('url', help = 'instagram post url')
     parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence output')
     parser.add_argument('-d', '--debug', action = 'store_true', help = 'save json data for debugging')
-    parser.add_argument('-p', '--path', metavar = 'PATH', help = 'download path (default: current dir)')
+    parser.add_argument('-p', '--path', default = os.getcwd(), help = 'download path (default: current dir)')
 
     args = parser.parse_args()
 
     if not re.fullmatch('http(s)?://www.instagram.com/p/\w+/?', args.url, flags = re.A):
-        exit('Error {} not an Instagram post url'.format(args.url))
+        exit('ERROR: {} not an Instagram post url'.format(args.url))
 
     if args.quiet:
         sys.stdout = sys.stderr = open(os.devnull, 'w')
 
-    if args.path:
-        os.makedirs(args.path, exist_ok = True)
-
     print('Downloading {}'.format(args.url))
 
-    file_path = os.path.abspath(args.path) if args.path else os.getcwd()
+    try:
+        os.makedirs(args.path, exist_ok = True)
 
-    url_id = args.url.rstrip('/').split('/')[-1]
+    except:
+        exit('ERROR: failed to create {}'.format(args.path))
+
+    file_path = os.path.abspath(args.path)
+    file_id = args.url.rstrip('/').split('/')[-1]
 
     data = dl(args.url)
 
@@ -79,10 +81,10 @@ def main() -> None:
             json_data = json.loads(html_line.split('_sharedData = ')[1][:-10])
 
     if 'json_data' not in locals():
-        exit('Error no image or video found')
+        exit('ERROR: no image or video found')
 
     if args.debug:
-        file_name = '{}/{}.json'.format(file_path, url_id)
+        file_name = '{}/{}.json'.format(file_path, file_id)
 
         with open(file_name, 'w') as f:
             json.dump(json_data, f)
@@ -105,7 +107,7 @@ def main() -> None:
         file_ext = 'mp4' if c['is_video'] else 'jpg'
         file_num = str(-(i+1)) if len(json_content) > 1 else ''
 
-        file_name = '{}/{}{}.{}'.format(file_path, url_id, file_num, file_ext)
+        file_name = '{}/{}{}.{}'.format(file_path, file_id, file_num, file_ext)
 
         data = dl(file_url)
 
