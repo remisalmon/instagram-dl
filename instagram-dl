@@ -39,7 +39,7 @@ def dl(url: str) -> bytes:
             data = response.read()
 
     except URLError as e:
-        e = e.reason if hasattr(e, 'reason') else e.code if hasattr(e, 'code') else ''
+        e = '{} {}'.format(e.code, e.reason) if hasattr(e, 'code') else e.reason
 
         exit('ERROR: failed to download data ({})'.format(e))
 
@@ -58,16 +58,16 @@ def main() -> None:
     if not re.fullmatch('http(s)?://www.instagram.com/p/\w+/?', args.url, flags = re.A):
         exit('ERROR: {} not an Instagram post url'.format(args.url))
 
-    if args.quiet:
-        sys.stdout = sys.stderr = open(os.devnull, 'w')
-
-    print('Downloading {}'.format(args.url))
-
     try:
         os.makedirs(args.path, exist_ok = True)
 
     except:
         exit('ERROR: failed to create {}'.format(args.path))
+
+    if args.quiet:
+        sys.stdout = sys.stderr = open(os.devnull, 'w')
+
+    print('Downloading {}'.format(args.url))
 
     file_path = os.path.abspath(args.path)
     file_id = args.url.rstrip('/').split('/')[-1]
