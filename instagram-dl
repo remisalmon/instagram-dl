@@ -55,7 +55,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if not re.fullmatch('http(s)?://www.instagram.com/p/\w+/?', args.url, flags = re.A):
+    if not re.fullmatch('http(s)?://www.instagram.com/p/[\w-]+/?', args.url, flags = re.A):
         exit('ERROR: {} not an Instagram post url'.format(args.url))
 
     try:
