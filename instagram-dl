@@ -41,28 +41,28 @@ def dl(url: str) -> bytes:
     except URLError as e:
         e = '{} {}'.format(e.code, e.reason) if hasattr(e, 'code') else e.reason
 
-        exit('ERROR: failed to download data ({})'.format(e))
+        raise Exception(e)
 
     return data
 
 def main() -> None:
-    parser = ArgumentParser(description = 'Download images and videos from an Instagram post')
+    parser = ArgumentParser(description='Download images and videos from an Instagram post')
 
-    parser.add_argument('url', help = 'instagram post url')
-    parser.add_argument('-q', '--quiet', action = 'store_true', help = 'silence output')
-    parser.add_argument('-d', '--debug', action = 'store_true', help = 'save json data for debugging')
-    parser.add_argument('-p', '--path', default = os.getcwd(), help = 'download path (default: current dir)')
+    parser.add_argument('url', help='Instagram post url')
+    parser.add_argument('-q', '--quiet', action='store_true', help='silence output')
+    parser.add_argument('-d', '--debug', action='store_true', help='save JSON data for debugging')
+    parser.add_argument('-p', '--path', default=os.getcwd(), help='download path (default: current dir)')
 
     args = parser.parse_args()
 
-    if not re.fullmatch('http(s)?://www.instagram.com/p/[\w-]+/?', args.url, flags = re.A):
+    if not re.fullmatch('https?://www.instagram.com/p/[\w-]+/?', args.url, flags=re.A):
         exit('ERROR: {} not an Instagram post url'.format(args.url))
 
     try:
-        os.makedirs(args.path, exist_ok = True)
+        os.makedirs(args.path, exist_ok=True)
 
     except:
-        exit('ERROR: failed to create {}'.format(args.path))
+        sys.exit('ERROR: failed to create {}'.format(args.path))
 
     if args.quiet:
         sys.stdout = sys.stderr = open(os.devnull, 'w')
@@ -70,9 +70,14 @@ def main() -> None:
     print('Downloading {}'.format(args.url))
 
     file_path = os.path.abspath(args.path)
+
     file_id = args.url.rstrip('/').split('/')[-1]
 
-    data = dl(args.url)
+    try:
+        data = dl(args.url)
+
+    except Exception as e:
+        sys.exit('ERROR: failed to download data ({})'.format(e))
 
     html_lines = data.decode().splitlines()
 
@@ -109,7 +114,11 @@ def main() -> None:
 
         file_name = '{}/{}{}.{}'.format(file_path, file_id, file_num, file_ext)
 
-        data = dl(file_url)
+        try:
+            data = dl(file_url)
+
+        except:
+            sys.exit('ERROR: failed to download data ({})'.format(e))
 
         with open(file_name, 'wb') as f:
             f.write(data)
