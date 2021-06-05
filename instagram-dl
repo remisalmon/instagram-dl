@@ -30,9 +30,9 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 def dl(url: str) -> bytes:
-    """Returns bytes object from url"""
+    """Return a bytes object from url."""
 
-    req = Request(url, headers = {'User-Agent':'Mozilla/5.0'})
+    req = Request(url, headers={'User-Agent':'Mozilla/5.0'})
 
     try:
         with urlopen(req) as response:
@@ -56,7 +56,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if not re.fullmatch('https?://www.instagram.com/p/[\w-]+/?', args.url, flags=re.A):
-        exit('ERROR: {} not an Instagram post url'.format(args.url))
+        sys.exit('ERROR: {} not an Instagram post url'.format(args.url))
 
     try:
         os.makedirs(args.path, exist_ok=True)
@@ -86,7 +86,7 @@ def main() -> None:
             json_data = json.loads(html_line.split('_sharedData = ')[1][:-10])
 
     if 'json_data' not in locals():
-        exit('ERROR: no image or video found')
+        sys.exit('ERROR: no image or video found')
 
     if args.debug:
         file_name = '{}/{}.json'.format(file_path, file_id)
